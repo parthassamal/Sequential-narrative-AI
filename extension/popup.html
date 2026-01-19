@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vibe AI</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <span class="logo-icon">🎬</span>
+        <span class="logo-text">Vibe AI</span>
+      </div>
+      <div class="status" id="status">
+        <span class="status-dot"></span>
+        <span class="status-text">Connecting...</span>
+      </div>
+    </header>
+
+    <!-- Search Section -->
+    <div class="search-section">
+      <div class="search-box">
+        <input 
+          type="text" 
+          id="searchInput" 
+          placeholder="What should I watch tonight?"
+          autocomplete="off"
+        >
+        <button id="searchBtn" class="search-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Quick Prompts -->
+      <div class="quick-prompts">
+        <button class="prompt-btn" data-query="action movies">🔥 Action</button>
+        <button class="prompt-btn" data-query="comedy tonight">😂 Comedy</button>
+        <button class="prompt-btn" data-query="thriller suspense">😱 Thriller</button>
+        <button class="prompt-btn" data-query="trending popular">📈 Trending</button>
+      </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="results-section" id="resultsSection">
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Finding perfect matches...</p>
+      </div>
+      
+      <div class="results-container" id="resultsContainer"></div>
+      
+      <div class="empty-state" id="emptyState">
+        <span class="empty-icon">🎯</span>
+        <p>Ask me anything about what to watch!</p>
+        <small>I'll search TMDb, YouTube & Paramount+</small>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <a href="http://localhost:3000" target="_blank" class="footer-link">Open Full App</a>
+      <span class="divider">•</span>
+      <a href="http://localhost:8888/docs" target="_blank" class="footer-link">API Docs</a>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

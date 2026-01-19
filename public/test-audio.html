@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Audio Test</title>
+  <style>
+    body { 
+      font-family: system-ui; 
+      background: #1a1a2e; 
+      color: white; 
+      display: flex; 
+      flex-direction: column;
+      align-items: center; 
+      justify-content: center; 
+      height: 100vh; 
+      margin: 0;
+    }
+    button { 
+      padding: 20px 40px; 
+      font-size: 24px; 
+      background: #f59e0b; 
+      border: none; 
+      border-radius: 12px; 
+      cursor: pointer; 
+      margin: 10px;
+    }
+    button:hover { background: #fbbf24; }
+    #status { margin-top: 20px; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1>🔊 Audio Test</h1>
+  <button onclick="testSpeech()">Click to Test Speech</button>
+  <button onclick="stopSpeech()">Stop</button>
+  <div id="status">Click the button above</div>
+
+  <script>
+    function testSpeech() {
+      const status = document.getElementById('status');
+      status.textContent = 'Starting...';
+      
+      // Cancel any existing speech
+      window.speechSynthesis.cancel();
+      
+      const text = "Hello! This is a test of the audio system. If you can hear this, the speech synthesis is working correctly.";
+      const utterance = new SpeechSynthesisUtterance(text);
+      
+      utterance.onstart = () => {
+        status.textContent = '🔊 Speaking...';
+      };
+      
+      utterance.onend = () => {
+        status.textContent = '✅ Finished! Audio works!';
+      };
+      
+      utterance.onerror = (e) => {
+        status.textContent = '❌ Error: ' + e.error;
+        console.error('Speech error:', e);
+      };
+      
+      window.speechSynthesis.speak(utterance);
+    }
+    
+    function stopSpeech() {
+      window.speechSynthesis.cancel();
+      document.getElementById('status').textContent = 'Stopped';
+    }
+  </script>
+</body>
+</html>

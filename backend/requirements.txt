@@ -1,0 +1,27 @@
+# FastAPI Backend Dependencies
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# HTTP Client
+httpx>=0.26.0
+
+# Text-to-Speech (Basic)
+gtts>=2.5.0
+
+# Scientific Computing (for DPP kernel, survival model)
+numpy>=2.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+python-multipart>=0.0.6
+
+# Optional: OpenAI (if using OpenAI TTS)
+# openai>=1.10.0
+
+# Optional: VoxCPM Neural TTS (high-quality, voice cloning)
+# Requires GPU for fast inference. Install with: pip install voxcpm soundfile
+# See: https://github.com/OpenBMB/VoxCPM
+# voxcpm>=1.5.0
+# soundfile>=0.12.1

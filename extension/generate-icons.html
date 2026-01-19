@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Generate Extension Icons</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #1a1a2e; color: white; }
+    canvas { border: 1px solid #333; margin: 10px; }
+    .icons { display: flex; gap: 20px; flex-wrap: wrap; }
+    button { padding: 10px 20px; background: #f59e0b; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; }
+    a { color: #14b8a6; }
+  </style>
+</head>
+<body>
+  <h1>🎬 Vibe AI Extension Icons</h1>
+  <p>Right-click each canvas and "Save image as..." to save the icons.</p>
+  
+  <div class="icons">
+    <div>
+      <h3>icon16.png</h3>
+      <canvas id="icon16" width="16" height="16"></canvas>
+    </div>
+    <div>
+      <h3>icon48.png</h3>
+      <canvas id="icon48" width="48" height="48"></canvas>
+    </div>
+    <div>
+      <h3>icon128.png</h3>
+      <canvas id="icon128" width="128" height="128"></canvas>
+    </div>
+  </div>
+  
+  <script>
+    function drawIcon(canvasId, size) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      
+      // Background
+      ctx.fillStyle = '#0f0f1a';
+      ctx.beginPath();
+      ctx.roundRect(0, 0, size, size, size * 0.15);
+      ctx.fill();
+      
+      // Gradient circle
+      const gradient = ctx.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, '#f59e0b');
+      gradient.addColorStop(1, '#14b8a6');
+      
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(size/2, size/2, size * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Play triangle
+      ctx.fillStyle = '#0f0f1a';
+      ctx.beginPath();
+      const triSize = size * 0.2;
+      ctx.moveTo(size/2 - triSize/3, size/2 - triSize/2);
+      ctx.lineTo(size/2 - triSize/3, size/2 + triSize/2);
+      ctx.lineTo(size/2 + triSize/2, size/2);
+      ctx.closePath();
+      ctx.fill();
+    }
+    
+    drawIcon('icon16', 16);
+    drawIcon('icon48', 48);
+    drawIcon('icon128', 128);
+  </script>
+</body>
+</html>
