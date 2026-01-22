@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Brain, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { useAppStore } from '../store/appStore';
 
 export function DecisionStateIndicator() {
@@ -44,9 +45,10 @@ export function DecisionStateIndicator() {
   const config = stressConfig[stressLevel];
   const Icon = config.icon;
 
-  return (
+  // Use portal to render directly to body, ensuring fixed positioning works
+  return createPortal(
     <motion.div
-      className={`fixed bottom-6 left-6 max-w-xs bg-gradient-to-r ${config.bgGradient} backdrop-blur-xl rounded-2xl border ${config.borderColor} p-4 shadow-xl`}
+      className={`fixed bottom-6 left-6 z-[9999] max-w-xs bg-gradient-to-r ${config.bgGradient} backdrop-blur-xl rounded-2xl border ${config.borderColor} p-4 shadow-xl`}
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ delay: 1 }}
@@ -83,6 +85,7 @@ export function DecisionStateIndicator() {
           </div>
         </div>
       </div>
-    </motion.div>
+    </motion.div>,
+    document.body
   );
 }

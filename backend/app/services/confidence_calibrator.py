@@ -77,9 +77,12 @@ class IsotonicCalibrator:
         """Add a (prediction, outcome) pair for calibration"""
         self.calibration_data.append((raw_confidence, outcome))
         
-        # Refit if we have enough data
-        if len(self.calibration_data) >= 50 and len(self.calibration_data) % 10 == 0:
-            self._fit()
+        # Fit when we have minimum data, then refit periodically
+        n = len(self.calibration_data)
+        if n >= 10:
+            # Fit on first 10, then every 5 new points
+            if not self._is_fitted or n % 5 == 0:
+                self._fit()
     
     def fit(self):
         """Public method to fit the calibrator"""

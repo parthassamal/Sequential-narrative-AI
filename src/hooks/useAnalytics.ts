@@ -331,13 +331,20 @@ export function useAnalytics() {
   
   // Send session data to backend metrics service
   const sendSessionToBackend = async (session: DecisionMetrics) => {
+    // Calculate actual browse time from session timestamps
+    const sessionStart = new Date(session.querySubmittedAt).getTime();
+    const sessionEnd = session.decisionMadeAt 
+      ? new Date(session.decisionMadeAt).getTime() 
+      : Date.now();
+    const actualBrowseTimeMs = sessionEnd - sessionStart;
+    
     const payload = {
       session_id: session.sessionId,
       user_id: 'user-' + Date.now(),
       committed: !!session.selectedContentId && !session.abandoned,
       commit_at_nru: session.viewedCards || 1,
       time_to_commit_ms: session.decisionTimeMs,
-      total_browse_time_ms: session.decisionTimeMs || 30000,
+      total_browse_time_ms: actualBrowseTimeMs > 0 ? actualBrowseTimeMs : (session.decisionTimeMs || 30000),
       initial_stress: 0.5,
       final_stress: session.abandoned ? 0.7 : 0.3,
       genres_shown: [],

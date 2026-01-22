@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Play, Star, Clock, Film, Tv, BookOpen, Volume2, StopCircle, Youtube, ExternalLink } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Play, Star, Clock, Film, Tv, BookOpen, Volume2, StopCircle, Youtube, ExternalLink, Check } from 'lucide-react';
 import { Recommendation } from '../types';
 import { useAppStore } from '../store/appStore';
 
@@ -12,6 +12,7 @@ interface ReelCardProps {
   onNarrationEnd?: () => void;
   autoPlayAudio?: boolean;
   onSelect?: (contentId: string) => void;
+  onSelectionComplete?: () => void; // Called after selection is recorded
 }
 
 const typeIcons: Record<string, typeof Film> = {
@@ -33,10 +34,11 @@ const providerNames: Record<string, string> = {
   paramount: 'Paramount+',
 };
 
-export function ReelCard({ recommendation, index, totalCards, onNarrationEnd, autoPlayAudio = false, onSelect }: ReelCardProps) {
+export function ReelCard({ recommendation, index, totalCards, onNarrationEnd, autoPlayAudio = false, onSelect, onSelectionComplete }: ReelCardProps) {
   const { content, matchScore, microPitch } = recommendation;
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isSelected, setIsSelected] = useState(false);
   const { addInteraction } = useAppStore();
   const hasAutoPlayed = useRef(false);
   
@@ -112,7 +114,11 @@ export function ReelCard({ recommendation, index, totalCards, onNarrationEnd, au
   };
 
   const handlePlayClick = () => {
+    if (isSelected) return; // Prevent double clicks
+    
     window.speechSynthesis.cancel();
+    setIsSelected(true);
+    
     addInteraction({
       contentId: content.id,
       action: 'select',
@@ -127,6 +133,11 @@ export function ReelCard({ recommendation, index, totalCards, onNarrationEnd, au
     if (content.streamingUrl) {
       window.open(content.streamingUrl, '_blank');
     }
+    
+    // Show success state then close after a delay
+    setTimeout(() => {
+      onSelectionComplete?.();
+    }, 1500);
   };
 
   return (
@@ -252,14 +263,48 @@ export function ReelCard({ recommendation, index, totalCards, onNarrationEnd, au
 
           {/* CTA */}
           <button
-            className="flex items-center gap-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-midnight-950 px-8 py-4 rounded-full font-bold text-lg shadow-lg transition-transform hover:scale-105"
+            className={`flex items-center gap-3 px-8 py-4 rounded-full font-bold text-lg shadow-lg transition-all ${
+              isSelected 
+                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white scale-105' 
+                : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-midnight-950 hover:scale-105'
+            }`}
             onClick={handlePlayClick}
+            disabled={isSelected}
           >
-            <Play className="w-6 h-6 fill-current" />
-            <span>Watch on {providerName || 'Platform'}</span>
-            {content.streamingUrl && <ExternalLink className="w-5 h-5" />}
+            {isSelected ? (
+              <>
+                <Check className="w-6 h-6" />
+                <span>Added to Watch List!</span>
+              </>
+            ) : (
+              <>
+                <Play className="w-6 h-6 fill-current" />
+                <span>Watch on {providerName || 'Platform'}</span>
+                {content.streamingUrl && <ExternalLink className="w-5 h-5" />}
+              </>
+            )}
           </button>
         </div>
+        
+        {/* Selection Success Overlay */}
+        <AnimatePresence>
+          {isSelected && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-green-500/20 backdrop-blur-sm flex items-center justify-center z-50"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="bg-green-500 rounded-full p-6"
+              >
+                <Check className="w-16 h-16 text-white" />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Glow */}
         <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />

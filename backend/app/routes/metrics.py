@@ -88,7 +88,7 @@ async def record_session(session: SessionRecord):
         )
     
     # Try to fit calibrator if we have enough data
-    if len(confidence_estimator.get_calibration_data()) >= 20:
+    if len(confidence_estimator.get_calibration_data()) >= 10:
         confidence_estimator.fit_calibrator()
     
     return {
@@ -145,6 +145,10 @@ async def get_calibration_stats():
     Returns ECE (Expected Calibration Error), number of calibration points,
     whether the calibrator is fitted, and bin statistics.
     """
+    # Ensure calibrator is fitted if we have enough data
+    if len(confidence_estimator.get_calibration_data()) >= 10:
+        confidence_estimator.fit_calibrator()
+    
     # Generate bins for reliability diagram
     bins = []
     num_bins = 10

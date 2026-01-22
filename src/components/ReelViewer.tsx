@@ -230,6 +230,7 @@ export function ReelViewer({ onClose }: ReelViewerProps) {
           break;
         case 'Escape':
           telemetry.flush(); // Flush telemetry before closing
+          recordCardViewEnd(); // Record current card view before closing
           recordAbandonment(); // Track as abandonment
           onClose();
           break;
@@ -241,7 +242,7 @@ export function ReelViewer({ onClose }: ReelViewerProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleNext, handlePrevious, onClose, togglePlayback, telemetry]);
+  }, [handleNext, handlePrevious, onClose, togglePlayback, telemetry, recordCardViewEnd, recordAbandonment]);
 
   // Touch/swipe handling
   const touchStartX = useRef<number>(0);
@@ -317,6 +318,7 @@ export function ReelViewer({ onClose }: ReelViewerProps) {
         className="absolute top-6 right-6 z-50 p-3 bg-midnight-900/80 backdrop-blur-md rounded-full border border-white/10 hover:border-coral-400/50 hover:bg-coral-500/10 transition-all"
         onClick={() => {
           telemetry.flush();
+          recordCardViewEnd(); // Record current card view before closing
           recordAbandonment();
           onClose();
         }}
@@ -335,8 +337,13 @@ export function ReelViewer({ onClose }: ReelViewerProps) {
           onNarrationEnd={handleNarrationEnd}
           autoPlayAudio={audioEnabled}
           onSelect={(contentId) => {
+            recordCardViewEnd(); // Record card view before selection
             recordSelection(contentId);
             telemetry.flush();
+          }}
+          onSelectionComplete={() => {
+            // Close the reel after selection
+            onClose();
           }}
         />
       </div>

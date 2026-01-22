@@ -189,8 +189,17 @@ class MetricsService:
             return
         
         session = self._active_sessions.pop(session_id)
-        session.end_time = time.time()
-        session.total_browse_time = session.end_time - session.start_time
+        
+        # Only set end_time if not already set by record_commit
+        if session.end_time is None:
+            session.end_time = time.time()
+        
+        # For committed sessions, use the commit time as browse time
+        # For abandoned sessions, calculate from current time
+        if session.time_to_commit is not None:
+            session.total_browse_time = session.time_to_commit
+        else:
+            session.total_browse_time = session.end_time - session.start_time
         
         if final_stress is not None:
             session.final_stress = final_stress

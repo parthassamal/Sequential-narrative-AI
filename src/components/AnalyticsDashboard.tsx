@@ -10,7 +10,7 @@
  * - CTA: Confidence Trigger Accuracy
  * - DE: Diversity Exposure
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { X, Clock, CheckCircle, XCircle, Eye, TrendingUp, Activity, BarChart3, Target, Brain, Gauge, Zap, Shield, Sparkles } from 'lucide-react';
 import { useAnalytics, AggregatedMetrics } from '../hooks/useAnalytics';
@@ -66,12 +66,52 @@ interface RealtimeMetrics {
 }
 
 export function AnalyticsDashboard({ isOpen, onClose }: AnalyticsDashboardProps) {
-  const { aggregatedMetrics, getSessions, clearMetrics } = useAnalytics();
+  const { getSessions, clearMetrics } = useAnalytics();
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics | null>(null);
   const [calibrationStats, setCalibrationStats] = useState<CalibrationStats | null>(null);
   const [realtimeMetrics, setRealtimeMetrics] = useState<RealtimeMetrics | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'advanced' | 'calibration'>('overview');
   const [loading, setLoading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Calculate metrics fresh from localStorage each render
+  const sessions = getSessions();
+  const aggregatedMetrics = useMemo(() => {
+    if (sessions.length === 0) {
+      return {
+        totalSessions: 0,
+        avgDecisionTimeMs: 0,
+        completionRate: 0,
+        abandonmentRate: 0,
+        avgViewedCards: 0,
+        avgRecommendationsCount: 0,
+        mostSelectedGenres: [],
+        hourlyDistribution: [],
+      };
+    }
+
+    const completedSessions = sessions.filter(s => s.selectedContentId && !s.abandoned);
+    const abandonedSessions = sessions.filter(s => s.abandoned && !s.selectedContentId);
+    const sessionsWithDecision = sessions.filter(s => s.decisionTimeMs !== null && s.decisionTimeMs > 0);
+
+    const avgDecisionTime = sessionsWithDecision.length > 0
+      ? sessionsWithDecision.reduce((sum, s) => sum + (s.decisionTimeMs || 0), 0) / sessionsWithDecision.length
+      : 0;
+
+    const avgViewedCards = sessions.reduce((sum, s) => sum + s.viewedCards, 0) / sessions.length;
+    const avgRecommendations = sessions.reduce((sum, s) => sum + s.recommendationsCount, 0) / sessions.length;
+
+    return {
+      totalSessions: sessions.length,
+      avgDecisionTimeMs: Math.round(avgDecisionTime),
+      completionRate: Math.round((completedSessions.length / sessions.length) * 100),
+      abandonmentRate: Math.round((abandonedSessions.length / sessions.length) * 100),
+      avgViewedCards: Math.round(avgViewedCards * 10) / 10,
+      avgRecommendationsCount: Math.round(avgRecommendations * 10) / 10,
+      mostSelectedGenres: [],
+      hourlyDistribution: [],
+    };
+  }, [sessions, refreshKey]);
 
   // Fetch system metrics from backend
   useEffect(() => {
@@ -119,7 +159,6 @@ export function AnalyticsDashboard({ isOpen, onClose }: AnalyticsDashboardProps)
 
   if (!isOpen) return null;
 
-  const sessions = getSessions();
   const hasData = sessions.length > 0 || (systemMetrics?.total_sessions ?? 0) > 0;
 
   return (

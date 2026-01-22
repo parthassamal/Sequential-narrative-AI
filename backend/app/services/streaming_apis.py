@@ -792,26 +792,218 @@ class ParamountPlusProvider(StreamingProvider):
                 "provider": "paramount",
                 "keywords": ["surprise", "twist", "thriller", "unexpected", "spy", "mystery"]
             },
+            # Mind-Blowing / Thought-Provoking
+            {
+                "id": "paramount_mind_1",
+                "title": "Arrival",
+                "type": "movie",
+                "genre": ["Sci-Fi", "Drama", "Mystery"],
+                "year": 2016,
+                "rating": 7.9,
+                "duration": "1h 56m",
+                "poster_url": "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=500",
+                "backdrop_url": "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=1280",
+                "description": "A linguist works with the military to communicate with alien lifeforms, discovering a mind-bending truth about time.",
+                "provider": "paramount",
+                "keywords": ["mind-bending", "thought-provoking", "sci-fi", "twist", "deep", "meaningful", "psychological"]
+            },
+            {
+                "id": "paramount_mind_2",
+                "title": "Interstellar",
+                "type": "movie",
+                "genre": ["Sci-Fi", "Adventure", "Drama"],
+                "year": 2014,
+                "rating": 8.7,
+                "duration": "2h 49m",
+                "poster_url": "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=500",
+                "backdrop_url": "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=1280",
+                "description": "A team of explorers travel through a wormhole in space to ensure humanity's survival.",
+                "provider": "paramount",
+                "keywords": ["mind-bending", "thought-provoking", "sci-fi", "epic", "deep", "space", "emotional"]
+            },
+            {
+                "id": "paramount_mind_3",
+                "title": "Shutter Island",
+                "type": "movie",
+                "genre": ["Mystery", "Thriller"],
+                "year": 2010,
+                "rating": 8.2,
+                "duration": "2h 18m",
+                "poster_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500",
+                "backdrop_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1280",
+                "description": "A U.S. Marshal investigates a psychiatric facility on an island, but nothing is as it seems.",
+                "provider": "paramount",
+                "keywords": ["mind-bending", "twist", "psychological", "mystery", "thought-provoking", "thriller"]
+            },
+            {
+                "id": "paramount_mind_4",
+                "title": "Black Mirror",
+                "type": "series",
+                "genre": ["Sci-Fi", "Drama", "Thriller"],
+                "year": 2011,
+                "rating": 8.7,
+                "duration": "6 Seasons",
+                "poster_url": "https://images.unsplash.com/photo-1518770660439-4636190af475?w=500",
+                "backdrop_url": "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1280",
+                "description": "An anthology series exploring a twisted, high-tech multiverse where humanity's greatest innovations collide with darkest instincts.",
+                "provider": "paramount",
+                "keywords": ["mind-bending", "thought-provoking", "sci-fi", "twist", "dark", "technology", "psychological"]
+            },
+            # Documentary / Learn
+            {
+                "id": "paramount_doc_1",
+                "title": "Planet Earth III",
+                "type": "series",
+                "genre": ["Documentary", "Nature"],
+                "year": 2023,
+                "rating": 9.4,
+                "duration": "8 Episodes",
+                "poster_url": "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=500",
+                "backdrop_url": "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=1280",
+                "description": "Explore the most spectacular habitats on Earth and the remarkable animals that call them home.",
+                "provider": "paramount",
+                "keywords": ["documentary", "nature", "educational", "learn", "animals", "planet", "real"]
+            },
+            {
+                "id": "paramount_doc_2",
+                "title": "The Last Dance",
+                "type": "series",
+                "genre": ["Documentary", "Sports"],
+                "year": 2020,
+                "rating": 9.1,
+                "duration": "10 Episodes",
+                "poster_url": "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=500",
+                "backdrop_url": "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=1280",
+                "description": "A chronicle of Michael Jordan's last championship season with the Chicago Bulls.",
+                "provider": "paramount",
+                "keywords": ["documentary", "sports", "basketball", "learn", "history", "real", "inspiring"]
+            },
+            {
+                "id": "paramount_doc_3",
+                "title": "Our Universe",
+                "type": "series",
+                "genre": ["Documentary", "Science"],
+                "year": 2022,
+                "rating": 8.2,
+                "duration": "6 Episodes",
+                "poster_url": "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=500",
+                "backdrop_url": "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=1280",
+                "description": "Epic stories of Earth's extraordinary animals and their connection to the cosmos.",
+                "provider": "paramount",
+                "keywords": ["documentary", "science", "space", "learn", "educational", "nature", "real"]
+            },
+            {
+                "id": "paramount_doc_4",
+                "title": "Inside Job",
+                "type": "movie",
+                "genre": ["Documentary"],
+                "year": 2010,
+                "rating": 8.2,
+                "duration": "1h 49m",
+                "poster_url": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=500",
+                "backdrop_url": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1280",
+                "description": "An Oscar-winning documentary about the 2008 financial crisis and systemic corruption.",
+                "provider": "paramount",
+                "keywords": ["documentary", "finance", "investigation", "learn", "educational", "real", "true crime"]
+            },
+            {
+                "id": "paramount_doc_5",
+                "title": "March of the Penguins",
+                "type": "movie",
+                "genre": ["Documentary", "Nature"],
+                "year": 2005,
+                "rating": 7.5,
+                "duration": "1h 20m",
+                "poster_url": "https://images.unsplash.com/photo-1551986782-d0169b3f8fa7?w=500",
+                "backdrop_url": "https://images.unsplash.com/photo-1551986782-d0169b3f8fa7?w=1280",
+                "description": "A look at the annual journey of Emperor penguins as they march to their breeding ground.",
+                "provider": "paramount",
+                "keywords": ["documentary", "nature", "animals", "learn", "educational", "heartwarming", "real"]
+            },
         ]
         
         # Score each item based on query match
         query_lower = query.lower()
         query_words = set(query_lower.split())
         
+        # Determine content type filter from query
+        content_type_filter = None
+        if any(word in query_lower for word in ["movie", "movies", "film", "films"]):
+            content_type_filter = "movie"
+        elif any(word in query_lower for word in ["show", "shows", "series", "tv", "binge"]):
+            content_type_filter = "series"
+        
         # Expand common query terms with positive matches and negative exclusions
+        # These map mood-based queries to content keywords
         query_expansions = {
-            "relax": {"include": ["relax", "feel good", "cozy", "calm", "peaceful", "happy", "family", "animation", "comedy"], "exclude": ["horror", "thriller", "scary", "intense"]},
-            "scary": {"include": ["horror", "scary", "thriller", "creepy", "terrifying"], "exclude": ["comedy", "family", "kids"]},
-            "exciting": {"include": ["action", "exciting", "thrilling", "adventure", "epic", "intense"], "exclude": ["relax", "calm"]},
-            "funny": {"include": ["comedy", "funny", "humor", "laugh", "hilarious"], "exclude": ["horror", "thriller"]},
-            "love": {"include": ["romance", "romantic", "love", "relationship", "comedy"], "exclude": ["horror", "action"]},
-            "think": {"include": ["thought-provoking", "drama", "deep", "meaningful", "documentary"], "exclude": ["action", "horror"]},
-            "thought": {"include": ["thought-provoking", "drama", "documentary", "meaningful"], "exclude": ["action"]},
-            "provoking": {"include": ["thought-provoking", "drama", "documentary"], "exclude": []},
-            "documentary": {"include": ["documentary", "true crime", "real", "investigation", "news", "great"], "exclude": ["fiction", "animation", "action", "adventure", "sci-fi", "robots", "horror", "thriller", "comedy"]},
-            "surprise": {"include": ["mystery", "thriller", "unexpected", "twist", "comedy", "adventure"], "exclude": []},
+            # Relaxing mood
+            "relax": {"include": ["relax", "feel good", "cozy", "calm", "peaceful", "happy", "family", "animation", "heartwarming"], "exclude": ["horror", "thriller", "scary", "intense", "action", "violent"]},
+            "calm": {"include": ["relax", "feel good", "cozy", "calm", "peaceful", "family", "heartwarming"], "exclude": ["horror", "thriller", "scary", "intense", "action"]},
+            
+            # Scary mood
+            "scary": {"include": ["horror", "scary", "thriller", "creepy", "terrifying", "supernatural", "demon", "ghost"], "exclude": ["comedy", "family", "kids", "heartwarming"]},
+            "thrill": {"include": ["horror", "scary", "thriller", "suspense", "intense"], "exclude": ["comedy", "family"]},
+            
+            # Exciting mood
+            "exciting": {"include": ["action", "exciting", "thrilling", "adventure", "epic", "intense", "mission", "spy"], "exclude": ["relax", "calm", "documentary"]},
+            "action": {"include": ["action", "exciting", "thrilling", "adventure", "epic", "mission", "spy"], "exclude": ["relax", "documentary"]},
+            
+            # Funny mood
+            "funny": {"include": ["comedy", "funny", "humor", "laugh", "hilarious", "feel good"], "exclude": ["horror", "thriller", "scary"]},
+            "laugh": {"include": ["comedy", "funny", "humor", "hilarious", "feel good"], "exclude": ["horror", "thriller"]},
+            
+            # Romantic mood
+            "romantic": {"include": ["romance", "romantic", "love", "relationship", "heartwarming"], "exclude": ["horror", "action", "scary"]},
+            "love": {"include": ["romance", "romantic", "love", "relationship"], "exclude": ["horror"]},
+            
+            # Mind-blowing / thought-provoking mood
+            "mind": {"include": ["thought-provoking", "mind-bending", "sci-fi", "twist", "mystery", "psychological"], "exclude": ["comedy", "family"]},
+            "blow": {"include": ["thought-provoking", "mind-bending", "sci-fi", "twist", "epic"], "exclude": []},
+            "thought": {"include": ["thought-provoking", "drama", "documentary", "meaningful", "deep"], "exclude": ["action"]},
+            "provok": {"include": ["thought-provoking", "drama", "documentary", "deep", "meaningful"], "exclude": []},
+            
+            # Documentary / Learning mood
+            "documentary": {"include": ["documentary", "true crime", "real", "investigation", "educational", "nature"], "exclude": ["fiction", "animation", "action", "adventure", "sci-fi", "horror", "thriller", "comedy"]},
+            "learn": {"include": ["documentary", "educational", "true crime", "real", "investigation", "nature", "history"], "exclude": ["fiction", "animation", "action", "horror", "comedy"]},
+            
+            # Surprise mood
+            "surprise": {"include": ["mystery", "thriller", "unexpected", "twist", "adventure", "diverse"], "exclude": []},
+            "unexpected": {"include": ["mystery", "twist", "thriller", "adventure", "diverse"], "exclude": []},
+            
+            # General terms
             "watch": {"include": ["popular", "trending", "recommended"], "exclude": []},
+            "best": {"include": ["popular", "trending", "recommended"], "exclude": []},
+            "great": {"include": ["popular", "trending", "recommended"], "exclude": []},
+            "trending": {"include": ["popular", "trending", "recommended"], "exclude": []},
+            "popular": {"include": ["popular", "trending", "recommended"], "exclude": []},
+            "sports": {"include": ["sports", "football", "racing", "athletic"], "exclude": []},
+            "live": {"include": ["live", "news", "event"], "exclude": []},
+            "similar": {"include": ["popular", "trending"], "exclude": []},
+            "personalize": {"include": ["popular", "trending", "recommended", "diverse"], "exclude": []},
         }
+        
+        # Detect which mood category the query is for (to require primary match)
+        mood_primary_keywords = {
+            "scary": {"horror", "scary", "creepy", "terrifying", "supernatural", "demon", "ghost", "slasher"},
+            "funny": {"comedy", "funny", "humor", "laugh", "hilarious"},
+            "romantic": {"romance", "romantic", "love"},
+            "relaxing": {"relax", "cozy", "calm", "peaceful", "feel good", "heartwarming"},
+            "exciting": {"action", "adventure", "epic", "mission", "spy", "adrenaline"},
+            "mindblowing": {"mind-bending", "thought-provoking", "psychological", "twist", "deep"},
+            "documentary": {"documentary", "educational", "real", "true crime", "nature", "history", "investigation"},
+            "surprise": {"mystery", "unexpected", "twist", "whodunit", "detective"}
+        }
+        
+        detected_mood = None
+        mood_keywords = set()
+        for mood, primaries in mood_primary_keywords.items():
+            for keyword in primaries:
+                if keyword in query_lower:
+                    detected_mood = mood
+                    mood_keywords = primaries
+                    break
+            if detected_mood:
+                break
         
         exclude_keywords = set()
         for word in list(query_words):
@@ -822,7 +1014,13 @@ class ParamountPlusProvider(StreamingProvider):
         
         scored_content = []
         for item in mock_catalog:
-            score = 0
+            # Filter by content type if specified
+            if content_type_filter:
+                if content_type_filter == "movie" and item["type"] != "movie":
+                    continue
+                if content_type_filter == "series" and item["type"] != "series":
+                    continue
+            
             keywords = set(item.get("keywords", []))
             item_genres_lower = [g.lower() for g in item["genre"]]
             
@@ -836,6 +1034,16 @@ class ParamountPlusProvider(StreamingProvider):
                 if excluded:
                     continue
             
+            # If a mood is detected, require at least one primary keyword match
+            if detected_mood and mood_keywords:
+                has_primary_match = bool(mood_keywords & keywords) or any(
+                    any(pk in g for pk in mood_keywords) for g in item_genres_lower
+                )
+                if not has_primary_match:
+                    continue
+            
+            score = 0
+            
             # Check keywords
             keyword_matches = query_words & keywords
             score += len(keyword_matches) * 30
@@ -844,16 +1052,24 @@ class ParamountPlusProvider(StreamingProvider):
             if any(word in item["title"].lower() for word in query_words):
                 score += 50
             
-            # Check genre
+            # Check genre - give bonus for primary mood genre match
             for genre in item["genre"]:
-                if genre.lower() in query_lower or any(word in genre.lower() for word in query_words):
+                genre_lower = genre.lower()
+                if genre_lower in query_lower or any(word in genre_lower for word in query_words):
                     score += 40
+                # Extra bonus for primary mood genre match
+                if detected_mood and any(pk in genre_lower for pk in mood_keywords):
+                    score += 50
             
             # Check description
             desc_lower = item["description"].lower()
             for word in query_words:
                 if word in desc_lower:
                     score += 10
+            
+            # Boost by rating for general queries
+            if "best" in query_words or "great" in query_words or "top" in query_words:
+                score += int(item["rating"] * 10)
             
             if score > 0:
                 scored_content.append((item, score))
@@ -869,7 +1085,17 @@ class ParamountPlusProvider(StreamingProvider):
             import random
             defaults = []
             categories_seen = set()
-            shuffled_catalog = list(mock_catalog)
+            
+            # Filter catalog by content type if specified
+            filtered_catalog = mock_catalog
+            if content_type_filter:
+                filtered_catalog = [item for item in mock_catalog if item["type"] == content_type_filter]
+            
+            # If filter left nothing, use full catalog
+            if not filtered_catalog:
+                filtered_catalog = mock_catalog
+                
+            shuffled_catalog = list(filtered_catalog)
             random.shuffle(shuffled_catalog)
             
             for item in shuffled_catalog:
@@ -881,9 +1107,9 @@ class ParamountPlusProvider(StreamingProvider):
                 if len(defaults) >= limit:
                     break
             
-            # If still not enough, add highest rated
+            # If still not enough, add highest rated from filtered catalog
             if len(defaults) < limit:
-                by_rating = sorted(mock_catalog, key=lambda x: x["rating"], reverse=True)
+                by_rating = sorted(filtered_catalog, key=lambda x: x["rating"], reverse=True)
                 for item in by_rating:
                     if item not in defaults:
                         defaults.append(item.copy())
