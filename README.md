@@ -563,7 +563,6 @@ Sequential-narrative-AI/
 │   │   └── main.py
 │   └── requirements.txt
 ├── docker-compose.yml
-├── CLAUDE.md
 └── README.md
 ```
 
