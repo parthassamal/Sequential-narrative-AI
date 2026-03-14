@@ -150,12 +150,12 @@ Frontend design intent:
 
 ```mermaid
 flowchart LR
-    MAIN[app/main.py] --> RREC[/api/recommendations]
-    MAIN --> RTEL[/api/telemetry + /ws/telemetry]
-    MAIN --> RDS[/api/decision-state]
-    MAIN --> RMET[/api/metrics]
-    MAIN --> RSTR[/api/streaming]
-    MAIN --> RAUD[/api/audio]
+    MAIN["app/main.py"] --> RREC["/api/recommendations"]
+    MAIN --> RTEL["/api/telemetry + /ws/telemetry"]
+    MAIN --> RDS["/api/decision-state"]
+    MAIN --> RMET["/api/metrics"]
+    MAIN --> RSTR["/api/streaming"]
+    MAIN --> RAUD["/api/audio"]
 
     RREC --> SREC[recommendation_engine.py]
     RREC --> SNLP[nlp_service.py]
