@@ -2,7 +2,7 @@
  * Audio Hook - Uses backend TTS with Web Speech API fallback
  */
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { apiClient } from '../api/client';
+import { API_BASE_URL, apiClient } from '../api/client';
 
 interface UseAudioOptions {
   onStart?: () => void;
@@ -100,8 +100,7 @@ export function useAudio(options: UseAudioOptions = {}): UseAudioReturn {
       }
       
       // Create audio element
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8888';
-      const audioUrl = `${baseUrl}${response.audio_url}`;
+      const audioUrl = `${API_BASE_URL}${response.audio_url}`;
       console.log('Playing audio from:', audioUrl);
       
       const audio = new Audio();

@@ -89,19 +89,19 @@ class AIClient:
     def _init_providers(self):
         """Initialize available providers in priority order"""
         # Groq - fastest, most reliable free tier
-        groq_key = os.getenv("GROQ_API_KEY", "")
+        groq_key = settings.GROQ_API_KEY or os.getenv("GROQ_API_KEY", "")
         if groq_key:
             self.providers.append(GroqProvider(groq_key))
             print(f"✅ Groq AI enabled (model: {GroqProvider.default_model})")
         
         # Cerebras - fast inference
-        cerebras_key = os.getenv("CEREBRAS_API_KEY", "")
+        cerebras_key = settings.CEREBRAS_API_KEY or os.getenv("CEREBRAS_API_KEY", "")
         if cerebras_key:
             self.providers.append(CerebrasProvider(cerebras_key))
             print(f"✅ Cerebras AI enabled (model: {CerebrasProvider.default_model})")
         
         # OpenRouter - fallback with multiple models
-        openrouter_key = settings.OPENROUTER_API_KEY
+        openrouter_key = settings.OPENROUTER_API_KEY or os.getenv("OPENROUTER_API_KEY", "")
         if openrouter_key:
             self.providers.append(OpenRouterProvider(openrouter_key))
             print(f"✅ OpenRouter AI enabled (model: {OpenRouterProvider.default_model})")

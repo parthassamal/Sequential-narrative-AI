@@ -34,6 +34,10 @@ const providerNames: Record<string, string> = {
   paramount: 'Paramount+',
 };
 
+function withFallback(value: string | undefined, fallback: string): string {
+  return value && value.trim().length > 0 ? value : fallback;
+}
+
 export function ReelCard({ recommendation, index, totalCards, onNarrationEnd, autoPlayAudio = false, onSelect, onSelectionComplete }: ReelCardProps) {
   const { content, matchScore, microPitch } = recommendation;
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -45,6 +49,9 @@ export function ReelCard({ recommendation, index, totalCards, onNarrationEnd, au
   const TypeIcon = typeIcons[content.type] || Film;
   const providerColor = providerColors[content.provider || ''] || 'bg-gray-500';
   const providerName = providerNames[content.provider || ''] || content.provider;
+  const hookText = withFallback(microPitch?.hook, content.description || 'A personalized pick selected for you.');
+  const reasonText = withFallback(microPitch?.personalizedReason, 'Hand-picked based on your current preferences and viewing signals.');
+  const funFactText = withFallback(microPitch?.funFact, 'Fresh recommendation with a strong relevance score for this session.');
 
   // Play audio function
   const playAudio = () => {
@@ -219,9 +226,9 @@ export function ReelCard({ recommendation, index, totalCards, onNarrationEnd, au
               {content.type.charAt(0).toUpperCase() + content.type.slice(1)}
             </span>
             <span className="text-white/30">•</span>
-            {content.genre.slice(0, 3).map((genre, i) => (
+            {content.genre.slice(0, 3).map((genre, i, arr) => (
               <span key={genre} className="text-white/60 text-sm">
-                {genre}{i < 2 ? ' / ' : ''}
+                {genre}{i < arr.length - 1 ? ' / ' : ''}
               </span>
             ))}
           </div>
@@ -246,19 +253,19 @@ export function ReelCard({ recommendation, index, totalCards, onNarrationEnd, au
 
           {/* Hook */}
           <p className="text-lg text-white/90 leading-relaxed max-w-2xl mb-6">
-            {microPitch?.hook || 'Loading...'}
+            {hookText}
           </p>
 
           {/* Why you'll love this */}
           <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 mb-6 border border-white/10">
             <p className="text-teal-400 text-sm font-medium mb-1">Why you'll love this</p>
-            <p className="text-white/80 text-sm">{microPitch?.personalizedReason || 'Loading...'}</p>
+            <p className="text-white/80 text-sm">{reasonText}</p>
           </div>
 
           {/* Fun Fact */}
           <div className="flex items-start gap-3 mb-8">
             <span className="text-amber-400 text-xl">✦</span>
-            <p className="text-white/70 text-sm italic">{microPitch?.funFact || 'Loading...'}</p>
+            <p className="text-white/70 text-sm italic">{funFactText}</p>
           </div>
 
           {/* CTA */}

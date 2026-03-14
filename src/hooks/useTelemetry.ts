@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { TelemetryEvent, TelemetryBatch, EnhancedDecisionState } from '../types';
+import { API_BASE_URL } from '../api/client';
 
 interface TelemetryConfig {
   userId: string;
@@ -52,7 +53,7 @@ interface UseTelemetryReturn {
 }
 
 const DEFAULT_CONFIG: Partial<TelemetryConfig> = {
-  backendUrl: 'http://localhost:8888',
+  backendUrl: API_BASE_URL,
   batchIntervalMs: 2000, // Send every 2 seconds
   useWebSocket: true,
 };

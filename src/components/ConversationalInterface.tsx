@@ -1,13 +1,13 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from 'framer-motion';
-import { 
-  Sparkles, Search, Mic, Loader2, Brain, Zap, Heart, Ghost, Film, 
+import { motion, AnimatePresence, useMotionValue, PanInfo } from 'framer-motion';
+import {
+  Search, Mic, Loader2, Brain, Zap, Heart, Ghost, Film,
   Laugh, Skull, Clock, Users, Star, Compass, Flame, Coffee, Moon,
-  Tv, Popcorn, Trophy, Baby, Rocket, Music, ChevronLeft, ChevronRight,
-  Wand2, History, TrendingUp
+  Tv, Trophy, Rocket, ChevronLeft, ChevronRight,
+  Wand2, TrendingUp
 } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
-import { apiClient, transformRecommendations, transformUserProfileToBackend } from '../api/client';
+import { apiClient, getErrorMessage, transformRecommendations, transformUserProfileToBackend } from '../api/client';
 import { useAnalytics } from '../hooks/useAnalytics';
 
 // Mood categories with full metadata
@@ -167,14 +167,14 @@ function useAIMoodDetection() {
     return {
       primaryMood: moodScores[0].mood,
       confidence: Math.min(moodScores[0].score / 100, 0.95),
-      reason: getReasonText(moodScores[0].mood, timeOfDay, recentGenres)
+      reason: getReasonText(moodScores[0].mood, timeOfDay)
     };
   }, [userProfile]);
   
   return detectedMood;
 }
 
-function getReasonText(mood: typeof MOOD_CATEGORIES[0], timeOfDay: string, genres: string[]): string {
+function getReasonText(mood: typeof MOOD_CATEGORIES[0], timeOfDay: string): string {
   const reasons: Record<string, string[]> = {
     exciting: [
       "Based on your love for action content",
@@ -234,10 +234,10 @@ export function ConversationalInterface() {
   const sliderRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
+  const handleSubmitRef = useRef<((query: string) => Promise<void>) | null>(null);
   
   // Drag handling for slider
   const x = useMotionValue(0);
-  const sliderWidth = useTransform(x, [-300, 300], [0, 100]);
   
   const { 
     userProfile, 
@@ -276,17 +276,21 @@ export function ConversationalInterface() {
         const transcript = event.results[0][0].transcript;
         setSearchQuery(transcript);
         setIsListening(false);
-        handleSubmit(transcript);
+        void handleSubmitRef.current?.(transcript);
       };
 
-      recognitionRef.current.onerror = () => setIsListening(false);
+      recognitionRef.current.onerror = (event: any) => {
+        setIsListening(false);
+        const errorType = event?.error || 'unknown';
+        setErrorMessage(`Voice input failed (${errorType}). Please type your request instead.`);
+      };
       recognitionRef.current.onend = () => setIsListening(false);
     }
   }, []);
 
   const handleVoiceInput = () => {
     if (!SpeechRecognition) {
-      alert('Voice input is not supported in this browser.');
+      setErrorMessage('Voice input is not supported in this browser.');
       return;
     }
     if (isListening) {
@@ -298,6 +302,7 @@ export function ConversationalInterface() {
     }
   };
 
+  // Keep a ref to the latest handleSubmit so speech recognition always calls the current version
   const handleSubmit = useCallback(async (query: string) => {
     if (!query.trim() || isProcessing) return;
 
@@ -329,13 +334,18 @@ export function ConversationalInterface() {
       
     } catch (error) {
       console.error('Error:', error);
-      setErrorMessage("Connection failed. Is the backend running?");
+      setErrorMessage(getErrorMessage(error, 'Unable to fetch recommendations. Please check backend connectivity and try again.'));
     } finally {
       setIsProcessing(false);
       setIsLoading(false);
       setProcessingMood(null);
     }
   }, [isProcessing, userProfile, setIsLoading, setShowReel, setRecommendations, setCurrentQuery, startSession, recordRecommendationsShown]);
+
+  // Sync ref so speech recognition always uses the latest handleSubmit
+  useEffect(() => {
+    handleSubmitRef.current = handleSubmit;
+  }, [handleSubmit]);
 
   const handleMoodClick = useCallback((mood: typeof MOOD_CATEGORIES[0], index: number) => {
     if (isProcessing) return;

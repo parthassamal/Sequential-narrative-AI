@@ -1,13 +1,13 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Play, Sparkles, Search, Bell, User, ChevronRight, 
+  Play, Sparkles, Search, User, ChevronRight, 
   Volume2, VolumeX, Clock, Star, Loader2, X,
-  Brain, Zap, TrendingUp, BarChart3, HelpCircle,
+  Brain, Zap, BarChart3, HelpCircle,
   LogIn, LogOut, ChevronDown, Settings
 } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
-import { apiClient, transformRecommendations, transformUserProfileToBackend } from '../api/client';
+import { apiClient, getErrorMessage, transformRecommendations, transformUserProfileToBackend } from '../api/client';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { useUserPersistence } from '../hooks/useUserPersistence';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
@@ -113,6 +113,7 @@ function useAIMoodPrediction() {
 export function StreamingInterface() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAITooltip, setShowAITooltip] = useState(false);
@@ -136,6 +137,12 @@ export function StreamingInterface() {
   const { user, saveUser, clearUser } = useUserPersistence();
   const aiPrediction = useAIMoodPrediction();
 
+  useEffect(() => {
+    if (!errorMessage) return;
+    const timer = setTimeout(() => setErrorMessage(null), 5000);
+    return () => clearTimeout(timer);
+  }, [errorMessage]);
+
   const handleLogin = (userData: { name: string; email: string }) => {
     saveUser(userData);
     setShowAuthModal(false);
@@ -156,6 +163,7 @@ export function StreamingInterface() {
     setIsProcessing(true);
     setIsLoading(true);
     setCurrentQuery(query);
+    setErrorMessage(null);
 
     try {
       // DPP-based diversity optimization with cognitive load adaptation
@@ -175,9 +183,12 @@ export function StreamingInterface() {
         recordRecommendationsShown(recommendations.length);
         setRecommendations(recommendations);
         setShowReel(true);
+      } else {
+        setErrorMessage('No recommendations found for that request. Try a different mood or search.');
       }
     } catch (error) {
       console.error('Recommendation error:', error);
+      setErrorMessage(getErrorMessage(error, 'Unable to fetch recommendations right now. Please try again.'));
     } finally {
       setIsProcessing(false);
       setIsLoading(false);
@@ -673,6 +684,22 @@ export function StreamingInterface() {
                 <p className="text-white/50 text-sm">{aiPrediction.reason}</p>
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Error Toast */}
+      <AnimatePresence>
+        {errorMessage && (
+          <motion.div
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70]"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+          >
+            <div className="max-w-lg px-4 py-3 bg-red-500/90 border border-red-300/40 rounded-xl text-white text-sm shadow-lg backdrop-blur">
+              {errorMessage}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

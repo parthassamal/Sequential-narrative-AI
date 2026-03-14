@@ -3,6 +3,7 @@
  * Tracks decision metrics and user behavior for recommendation optimization
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { API_BASE_URL } from '../api/client';
 
 export interface DecisionMetrics {
   sessionId: string;
@@ -47,24 +48,43 @@ export function useAnalytics() {
     loadAggregatedMetrics();
   }, []);
 
+  const normalizeSession = (session: DecisionMetrics): DecisionMetrics => {
+    // Legacy cleanup: selected sessions should not be marked abandoned.
+    if (session.selectedContentId && session.abandoned) {
+      return {
+        ...session,
+        abandoned: false,
+      };
+    }
+    return session;
+  };
+
   const loadAggregatedMetrics = () => {
     try {
       const stored = localStorage.getItem(METRICS_KEY);
       if (stored) {
         const sessions: DecisionMetrics[] = JSON.parse(stored);
+        const normalizedSessions = sessions.map(normalizeSession);
         
         // Deduplicate sessions by sessionId (keep first occurrence)
         const seen = new Set<string>();
-        const dedupedSessions = sessions.filter(s => {
+        const dedupedSessions = normalizedSessions.filter(s => {
           if (seen.has(s.sessionId)) return false;
           seen.add(s.sessionId);
           return true;
         });
         
-        // Save deduped sessions back if we removed any
-        if (dedupedSessions.length !== sessions.length) {
+        // Save cleaned sessions back if we changed entries or removed duplicates.
+        const shouldPersistCleaned =
+          dedupedSessions.length !== sessions.length ||
+          JSON.stringify(dedupedSessions) !== JSON.stringify(sessions);
+
+        if (shouldPersistCleaned) {
           localStorage.setItem(METRICS_KEY, JSON.stringify(dedupedSessions));
-          console.log(`🧹 Cleaned ${sessions.length - dedupedSessions.length} duplicate sessions`);
+          const removed = sessions.length - dedupedSessions.length;
+          if (removed > 0) {
+            console.log(`🧹 Cleaned ${removed} duplicate sessions`);
+          }
         }
         
         const aggregated = calculateAggregatedMetrics(dedupedSessions);
@@ -302,18 +322,19 @@ export function useAnalytics() {
     try {
       const stored = localStorage.getItem(METRICS_KEY);
       const sessions: DecisionMetrics[] = stored ? JSON.parse(stored) : [];
+      const normalizedSession = normalizeSession(session);
       
       // Check if session already exists (prevent duplicates)
-      const existingIndex = sessions.findIndex(s => s.sessionId === session.sessionId);
+      const existingIndex = sessions.findIndex(s => s.sessionId === normalizedSession.sessionId);
       let updatedSessions: DecisionMetrics[];
       
       if (existingIndex >= 0) {
         // Update existing session instead of adding duplicate
         updatedSessions = [...sessions];
-        updatedSessions[existingIndex] = session;
+        updatedSessions[existingIndex] = normalizedSession;
       } else {
         // Add new session and keep only last N
-        updatedSessions = [session, ...sessions].slice(0, MAX_STORED_SESSIONS);
+        updatedSessions = [normalizedSession, ...sessions].slice(0, MAX_STORED_SESSIONS);
       }
       localStorage.setItem(METRICS_KEY, JSON.stringify(updatedSessions));
       console.log('💾 Saved to localStorage, total sessions:', updatedSessions.length);
@@ -323,7 +344,7 @@ export function useAnalytics() {
       setAggregatedMetrics(aggregated);
       
       // Send to backend for advanced metrics
-      sendSessionToBackend(session);
+      sendSessionToBackend(normalizedSession);
     } catch (error) {
       console.error('Error saving session:', error);
     }
@@ -352,7 +373,7 @@ export function useAnalytics() {
     };
     
     try {
-      const response = await fetch('http://localhost:8888/api/metrics/session', {
+      const response = await fetch(`${API_BASE_URL}/api/metrics/session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -360,6 +381,9 @@ export function useAnalytics() {
       
       if (response.ok) {
         await response.json();
+      } else {
+        const errorText = await response.text().catch(() => '');
+        console.warn(`Analytics recording failed with HTTP ${response.status}:`, errorText || response.statusText);
       }
     } catch (error) {
       console.warn('Analytics recording failed:', error);
@@ -370,7 +394,8 @@ export function useAnalytics() {
   const getSessions = useCallback((): DecisionMetrics[] => {
     try {
       const stored = localStorage.getItem(METRICS_KEY);
-      return stored ? JSON.parse(stored) : [];
+      const sessions: DecisionMetrics[] = stored ? JSON.parse(stored) : [];
+      return sessions.map(normalizeSession);
     } catch {
       return [];
     }
@@ -379,7 +404,13 @@ export function useAnalytics() {
   // Clear all metrics
   const clearMetrics = useCallback(() => {
     localStorage.removeItem(METRICS_KEY);
+    setCurrentSession(null);
     setAggregatedMetrics(null);
+
+    // Keep backend analytics in sync with local reset.
+    void fetch(`${API_BASE_URL}/api/metrics/clear`, { method: 'DELETE' }).catch((error) => {
+      console.warn('Failed to clear backend analytics metrics:', error);
+    });
   }, []);
 
   return {

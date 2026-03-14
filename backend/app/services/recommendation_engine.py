@@ -13,6 +13,7 @@ import time
 from typing import List, Dict, Tuple, Optional
 from datetime import datetime
 import random
+import re
 
 from app.models import (
     Content, UserProfile, Recommendation, NLPIntent, 
@@ -55,7 +56,76 @@ class RecommendationEngine:
             "recency_boost": settings.WEIGHT_RECENCY_BOOST,
             "diversity_penalty": settings.WEIGHT_DIVERSITY_PENALTY,
             "history_penalty": settings.WEIGHT_HISTORY_PENALTY,
+            "query_relevance": 0.45,
         }
+
+    def _term_matches_text(self, term: str, text: str) -> bool:
+        """Loose lexical matching for closely related word forms."""
+        if term in text:
+            return True
+        singular = term[:-1] if term.endswith("s") else term
+        if singular in text:
+            return True
+        if len(term) >= 5 and term[:5] in text:
+            return True
+        return False
+
+    def _extract_query_terms(self, raw_query: Optional[str], intent: Optional[NLPIntent]) -> List[str]:
+        """Extract normalized query terms used for relevance scoring."""
+        stop_words = {
+            "the", "a", "an", "for", "with", "and", "or", "to", "of", "in",
+            "on", "me", "my", "i", "want", "something", "show", "watch", "please",
+            "movie", "movies", "tv", "series", "about", "find", "looking", "like"
+        }
+        terms: List[str] = []
+        has_explicit_query = bool(raw_query and raw_query.strip())
+
+        if raw_query:
+            terms.extend(re.findall(r"[a-z0-9']+", raw_query.lower()))
+
+        # Use intent-derived keywords only when query is absent.
+        if intent and not has_explicit_query:
+            for pref in intent.preferences:
+                terms.extend(re.findall(r"[a-z0-9']+", pref.lower()))
+            if intent.mood:
+                terms.extend(re.findall(r"[a-z0-9']+", intent.mood.value.lower()))
+
+        deduped: List[str] = []
+        seen = set()
+        for term in terms:
+            if len(term) < 3 or term in stop_words:
+                continue
+            if term not in seen:
+                deduped.append(term)
+                seen.add(term)
+        return deduped
+
+    def _score_query_relevance(self, content: Content, query_terms: List[str]) -> float:
+        """Score lexical relevance between query terms and content metadata."""
+        if not query_terms:
+            return 50.0
+
+        title_text = content.title.lower()
+        genre_text = " ".join(g.lower() for g in content.genre)
+        description_text = content.description.lower()
+        themes_text = " ".join(content.themes).lower()
+        mood_text = " ".join(m.value.lower() for m in content.mood)
+        provider_text = (content.provider or "").lower()
+        searchable_text = " ".join([title_text, genre_text, description_text, themes_text, mood_text, provider_text])
+
+        score = 0.0
+        for term in query_terms:
+            if self._term_matches_text(term, title_text):
+                score += 2.5
+            if self._term_matches_text(term, genre_text):
+                score += 2.0
+            if self._term_matches_text(term, description_text):
+                score += 1.0
+            elif self._term_matches_text(term, searchable_text):
+                score += 0.5
+
+        max_score = max(1.0, len(query_terms) * 3.5)
+        return min(100.0, (score / max_score) * 100.0)
     
     def _build_search_query(
         self, 
@@ -266,6 +336,12 @@ class RecommendationEngine:
         
         # Build search query from intent and user preferences
         search_query = self._build_search_query(request.query, intent, request.user_profile)
+        query_terms = self._extract_query_terms(request.query, intent)
+        broad_terms = {
+            "movie", "movies", "film", "films", "series", "show", "shows",
+            "documentary", "documentaries", "content"
+        }
+        focus_terms = [term for term in query_terms if term not in broad_terms]
         
         # Fetch content from real streaming APIs
         all_content = await self._fetch_content_from_apis(search_query, intent)
@@ -281,14 +357,63 @@ class RecommendationEngine:
             exclude_ids.add(record.content_id)
         
         available_content = [c for c in all_content if c.id not in exclude_ids]
+
+        # Blend in local catalog for explicit queries so narrow asks still have good options.
+        if query_terms:
+            existing_ids = {c.id for c in available_content}
+            local_candidates = [
+                c for c in get_all_content()
+                if c.id not in exclude_ids and c.id not in existing_ids
+            ]
+            available_content.extend(local_candidates)
+
+        # If API search returns too few results, supplement with local catalog.
+        # This prevents crashes on narrow queries and keeps at least a small reel.
+        if len(available_content) < settings.MIN_RECOMMENDATIONS:
+            existing_ids = {c.id for c in available_content}
+            supplemental = [
+                c for c in get_all_content()
+                if c.id not in exclude_ids and c.id not in existing_ids
+            ]
+            available_content.extend(supplemental)
         
         # ========== Content Scoring ==========
         # Score all content (quality scores for DPP)
         scored_content = [
-            (content, self._calculate_score(content, request.user_profile, intent))
+            (content, self._calculate_score(content, request.user_profile, intent, query_terms))
             for content in available_content
         ]
         scored_content.sort(key=lambda x: x[1], reverse=True)
+
+        # For explicit queries, prioritize items that actually match query semantics.
+        # Keep weak matches only as fallback when we don't have enough relevant items.
+        if query_terms:
+            strong_matches: List[Tuple[Content, float]] = []
+            weak_matches: List[Tuple[Content, float, float]] = []
+            for content, score in scored_content:
+                query_score = self._score_query_relevance(content, query_terms)
+                searchable_focus = " ".join([
+                    content.title.lower(),
+                    " ".join(g.lower() for g in content.genre),
+                    content.description.lower(),
+                    " ".join(content.themes).lower(),
+                ])
+                has_focus_match = (
+                    any(self._term_matches_text(term, searchable_focus) for term in focus_terms)
+                    if focus_terms else True
+                )
+                if query_score >= 20 and has_focus_match:
+                    strong_matches.append((content, score))
+                else:
+                    weak_matches.append((content, score, query_score))
+
+            if len(strong_matches) >= settings.MIN_RECOMMENDATIONS:
+                # Prefer precision for explicit queries: keep strongly relevant items only.
+                scored_content = strong_matches
+            elif strong_matches:
+                # When strict matches are scarce, backfill with weak matches ordered by query relevance.
+                weak_matches.sort(key=lambda item: (item[2], item[1]), reverse=True)
+                scored_content = strong_matches + [(content, score) for content, score, _ in weak_matches]
         
         # ========== DPP-Based Diversity Selection ==========
         # Use cognitive-load aware set size from enhanced state
@@ -297,8 +422,14 @@ class RecommendationEngine:
         max_results = min(max_results, settings.MAX_RECOMMENDATIONS)
         max_results = max(max_results, settings.MIN_RECOMMENDATIONS)
         
-        # Apply full DPP kernel for diversity
-        if len(scored_content) > max_results:
+        # For explicit search queries, preserve relevance ordering.
+        if query_terms:
+            diverse_selection = scored_content[:max_results]
+            dpp_log_det = 0.0
+            confidence_uplifts = [0.0] * len(diverse_selection)
+            marginals = [0.5] * len(diverse_selection)
+        # Apply full DPP kernel for diversity for non-explicit browse mode.
+        elif len(scored_content) > max_results:
             candidates = [c for c, _ in scored_content[:20]]  # Top 20 candidates
             quality_scores = [s for _, s in scored_content[:20]]
             
@@ -322,6 +453,17 @@ class RecommendationEngine:
             dpp_log_det = 0.0
             confidence_uplifts = [0.0] * len(diverse_selection)
             marginals = [0.5] * len(diverse_selection)
+
+        # Ensure minimum reel size for response model and demo UX.
+        if len(diverse_selection) < settings.MIN_RECOMMENDATIONS:
+            selected_ids = {c.id for c, _ in diverse_selection}
+            for content, score in scored_content:
+                if content.id in selected_ids:
+                    continue
+                diverse_selection.append((content, score))
+                selected_ids.add(content.id)
+                if len(diverse_selection) >= settings.MIN_RECOMMENDATIONS:
+                    break
         
         # Reorder for engagement (strong start, variety, strong end)
         optimized_sequence = self._optimize_sequence(diverse_selection)
@@ -389,7 +531,7 @@ class RecommendationEngine:
             # Patent-aligned metrics
             dpp_log_det=dpp_log_det,
             hesitation_adjusted=enhanced_state.should_reduce_choices,
-            optimal_set_size_used=len(recommendations),
+            optimal_set_size_used=max(settings.MIN_RECOMMENDATIONS, len(recommendations)),
             hazard_rate_at_generation=survival_pred.hazard_rate,
             predicted_commit_probability=enhanced_state.commit_probability
         )
@@ -398,7 +540,8 @@ class RecommendationEngine:
         self, 
         content: Content, 
         user_profile: UserProfile, 
-        intent: NLPIntent
+        intent: NLPIntent,
+        query_terms: Optional[List[str]] = None
     ) -> float:
         """Calculate multi-factor content score"""
         factors = {
@@ -409,10 +552,23 @@ class RecommendationEngine:
             "history_penalty": self._score_history(content, user_profile),
         }
         
-        total_score = sum(
+        profile_score = sum(
             factors[key] * self.weights[key] 
             for key in factors
         )
+
+        if query_terms:
+            query_score = self._score_query_relevance(content, query_terms)
+            total_score = (
+                profile_score * (1 - self.weights["query_relevance"])
+                + query_score * self.weights["query_relevance"]
+            )
+
+            # Downrank items that barely match user query terms.
+            if query_score < 15:
+                total_score *= 0.65
+        else:
+            total_score = profile_score
         
         return min(100, max(0, total_score))
     
@@ -476,46 +632,6 @@ class RecommendationEngine:
         """Score penalty for already watched content"""
         watched_ids = {r.content_id for r in user_profile.viewing_history}
         return 0 if content.id in watched_ids else 100
-    
-    def _optimize_diversity(
-        self, 
-        scored_content: List[Tuple[Content, float]], 
-        max_items: int
-    ) -> List[Tuple[Content, float]]:
-        """
-        Apply Determinantal Point Process (DPP) inspired diversity optimization.
-        Balances relevance with diversity to avoid filter bubbles.
-        """
-        if len(scored_content) <= max_items:
-            return scored_content
-        
-        selected: List[Tuple[Content, float]] = []
-        remaining = list(scored_content)
-        
-        while len(selected) < max_items and remaining:
-            if not selected:
-                # First item: pick highest score
-                selected.append(remaining.pop(0))
-                continue
-            
-            # For subsequent items, balance relevance with diversity
-            best_idx = 0
-            best_combined_score = -float('inf')
-            
-            for i, (candidate, score) in enumerate(remaining[:10]):  # Check top 10
-                diversity_bonus = self._calculate_diversity_bonus(
-                    candidate, 
-                    [s[0] for s in selected]
-                )
-                combined_score = score * 0.7 + diversity_bonus * 0.3
-                
-                if combined_score > best_combined_score:
-                    best_combined_score = combined_score
-                    best_idx = i
-            
-            selected.append(remaining.pop(best_idx))
-        
-        return selected
     
     def _calculate_diversity_bonus(
         self, 

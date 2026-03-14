@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite+aiosqlite:///./data/sequential_narrative.db"
     
     # AI Configuration (OpenRouter or OpenAI)
+    GROQ_API_KEY: Optional[str] = None
+    CEREBRAS_API_KEY: Optional[str] = None
     OPENROUTER_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None  # Fallback to OpenAI if no OpenRouter
     

@@ -2,12 +2,28 @@
 Streaming Service API Routes
 Provides unified access to multiple streaming platforms.
 """
-from fastapi import APIRouter, Query
+import logging
+from fastapi import APIRouter, Query, HTTPException
 from typing import Optional
 
 from app.services.streaming_apis import content_service
 
 router = APIRouter(prefix="/api/streaming", tags=["Streaming Services"])
+logger = logging.getLogger(__name__)
+
+
+def _validate_provider(provider: Optional[str]) -> Optional[str]:
+    if provider is None:
+        return None
+
+    normalized = provider.lower()
+    if normalized not in content_service.providers:
+        valid = ", ".join(sorted(content_service.providers.keys()))
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported provider '{provider}'. Valid providers: {valid}."
+        )
+    return normalized
 
 
 @router.get("/providers")
@@ -20,10 +36,15 @@ async def list_providers():
     - YouTube (Video Platform)
     - Paramount+ (Enterprise - Demo Mode)
     """
-    return {
-        "providers": content_service.get_available_providers(),
-        "total": len(content_service.providers)
-    }
+    try:
+        providers = content_service.get_available_providers()
+        return {
+            "providers": providers,
+            "total": len(content_service.providers)
+        }
+    except Exception:
+        logger.exception("Failed to list streaming providers")
+        raise HTTPException(status_code=500, detail="Failed to load streaming providers.")
 
 
 @router.get("/search")
@@ -39,22 +60,30 @@ async def search_content(
     - **provider**: Optional - search specific provider only
     - **limit**: Max results per provider (default: 10)
     """
-    if provider:
-        results = await content_service.search_provider(provider, q, limit)
+    normalized_provider = _validate_provider(provider)
+
+    try:
+        if normalized_provider:
+            results = await content_service.search_provider(normalized_provider, q, limit)
+            return {
+                "query": q,
+                "provider": normalized_provider,
+                "results": results,
+                "total": len(results)
+            }
+
+        results = await content_service.search_all(q, limit)
         return {
             "query": q,
-            "provider": provider,
+            "provider": "all",
             "results": results,
             "total": len(results)
         }
-    
-    results = await content_service.search_all(q, limit)
-    return {
-        "query": q,
-        "provider": "all",
-        "results": results,
-        "total": len(results)
-    }
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Streaming search failed", extra={"provider": normalized_provider, "query": q})
+        raise HTTPException(status_code=502, detail="Streaming search failed. Please try again.")
 
 
 @router.get("/trending")
@@ -67,20 +96,28 @@ async def get_trending(
     
     Returns currently popular movies, shows, and videos.
     """
-    if provider and provider in content_service.providers:
-        results = await content_service.providers[provider].get_trending(limit)
+    normalized_provider = _validate_provider(provider)
+
+    try:
+        if normalized_provider:
+            results = await content_service.providers[normalized_provider].get_trending(limit)
+            return {
+                "provider": normalized_provider,
+                "results": results,
+                "total": len(results)
+            }
+
+        results = await content_service.get_trending_all(limit)
         return {
-            "provider": provider,
+            "provider": "all",
             "results": results,
             "total": len(results)
         }
-    
-    results = await content_service.get_trending_all(limit)
-    return {
-        "provider": "all",
-        "results": results,
-        "total": len(results)
-    }
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Failed to fetch trending streaming content", extra={"provider": normalized_provider})
+        raise HTTPException(status_code=502, detail="Failed to fetch trending content.")
 
 
 @router.get("/content/{content_id}")
@@ -93,19 +130,28 @@ async def get_content_details(content_id: str):
     - YouTube: youtube_abcdefg
     - Paramount: paramount_123
     """
-    # Determine provider from ID prefix
     if content_id.startswith("tmdb_"):
-        result = await content_service.providers["tmdb"].get_details(content_id)
+        provider_id = "tmdb"
     elif content_id.startswith("youtube_"):
-        result = await content_service.providers["youtube"].get_details(content_id)
+        provider_id = "youtube"
     elif content_id.startswith("paramount_"):
-        result = await content_service.providers["paramount"].get_details(content_id)
+        provider_id = "paramount"
     else:
-        return {"error": "Unknown content ID format"}
-    
-    if result:
-        return result
-    return {"error": "Content not found"}
+        raise HTTPException(
+            status_code=400,
+            detail="Unknown content ID format. Expected tmdb_, youtube_, or paramount_ prefix."
+        )
+
+    try:
+        result = await content_service.providers[provider_id].get_details(content_id)
+    except Exception:
+        logger.exception("Failed to fetch content details", extra={"provider": provider_id, "content_id": content_id})
+        raise HTTPException(status_code=502, detail="Failed to fetch content details from streaming provider.")
+
+    if not result:
+        raise HTTPException(status_code=404, detail="Content not found.")
+
+    return result
 
 
 @router.get("/paramount/status")

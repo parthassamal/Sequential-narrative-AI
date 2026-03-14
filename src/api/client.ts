@@ -4,10 +4,98 @@
 import { Recommendation, UserProfile, Content, MicroPitch } from '../types';
 
 // Use environment variable in production, fallback to localhost for development
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8888';
+function resolveApiBaseUrl(): string {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl && typeof envUrl === 'string') {
+    return envUrl.replace(/\/+$/, '');
+  }
+
+  if (typeof window !== 'undefined') {
+    const { protocol, hostname, port } = window.location;
+
+    // Demo/dev convention: frontend 300x -> backend 800x (e.g. 3009 -> 8009).
+    if (/^3\d{3}$/.test(port)) {
+      return `${protocol}//${hostname}:8${port.slice(1)}`;
+    }
+
+    return `${protocol}//${hostname}:8888`;
+  }
+
+  return 'http://localhost:8888';
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
+const DEFAULT_REQUEST_TIMEOUT_MS = 15000;
 
 interface FetchOptions extends RequestInit {
   params?: Record<string, string>;
+  timeoutMs?: number;
+}
+
+interface APIErrorOptions {
+  status?: number;
+  code?: string;
+  details?: unknown;
+}
+
+export class APIError extends Error {
+  readonly status?: number;
+  readonly code?: string;
+  readonly details?: unknown;
+
+  constructor(message: string, options: APIErrorOptions = {}) {
+    super(message);
+    this.name = 'APIError';
+    this.status = options.status;
+    this.code = options.code;
+    this.details = options.details;
+  }
+}
+
+function parseErrorMessage(payload: unknown, status: number): string {
+  if (typeof payload === 'string' && payload.trim()) {
+    return payload;
+  }
+
+  if (payload && typeof payload === 'object') {
+    const candidate = payload as Record<string, unknown>;
+    const detail =
+      (typeof candidate.detail === 'string' && candidate.detail) ||
+      (typeof candidate.error === 'string' && candidate.error) ||
+      (typeof candidate.message === 'string' && candidate.message);
+
+    if (detail) {
+      return detail;
+    }
+  }
+
+  return `Request failed with HTTP ${status}`;
+}
+
+async function parseResponseBody(response: Response): Promise<unknown> {
+  if (response.status === 204) {
+    return null;
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return response.json().catch(() => null);
+  }
+
+  return response.text().catch(() => null);
+}
+
+export function getErrorMessage(
+  error: unknown,
+  fallback: string = 'Something went wrong. Please try again.'
+): string {
+  if (error instanceof APIError) {
+    return error.message;
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
 }
 
 class APIClient {
@@ -25,7 +113,7 @@ class APIClient {
     endpoint: string,
     options: FetchOptions = {}
   ): Promise<T> {
-    const { params, ...fetchOptions } = options;
+    const { params, timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS, ...fetchOptions } = options;
     
     let url = `${this.baseUrl}${endpoint}`;
     
@@ -34,20 +122,54 @@ class APIClient {
       url += `?${searchParams.toString()}`;
     }
 
-    const response = await fetch(url, {
-      ...fetchOptions,
-      headers: {
-        'Content-Type': 'application/json',
-        ...fetchOptions.headers,
-      },
-    });
+    const controller = new AbortController();
+    const hasExternalSignal = Boolean(fetchOptions.signal);
+    const timeout = setTimeout(() => {
+      if (!hasExternalSignal) {
+        controller.abort();
+      }
+    }, timeoutMs);
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-      throw new Error(error.detail || `HTTP ${response.status}`);
+    try {
+      const response = await fetch(url, {
+        ...fetchOptions,
+        signal: fetchOptions.signal || controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          ...fetchOptions.headers,
+        },
+      });
+
+      const parsedBody = await parseResponseBody(response);
+
+      if (!response.ok) {
+        throw new APIError(parseErrorMessage(parsedBody, response.status), {
+          status: response.status,
+          details: parsedBody,
+        });
+      }
+
+      return parsedBody as T;
+    } catch (error) {
+      if (error instanceof APIError) {
+        throw error;
+      }
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw new APIError(
+          `Request timed out after ${Math.round(timeoutMs / 1000)}s. Please try again.`,
+          { code: 'REQUEST_TIMEOUT' }
+        );
+      }
+      if (error instanceof Error) {
+        throw new APIError(`Network error: ${error.message}`, {
+          code: 'NETWORK_ERROR',
+          details: error,
+        });
+      }
+      throw new APIError('Unexpected network error occurred.');
+    } finally {
+      clearTimeout(timeout);
     }
-
-    return response.json();
   }
 
   // Health check
@@ -66,6 +188,8 @@ class APIClient {
     constraints?: {
       max_results?: number;
       exclude_content_ids?: string[];
+      cognitive_load_factor?: number;
+      [key: string]: unknown;
     };
   }) {
     return this.request<any>('/api/recommendations/generate', {

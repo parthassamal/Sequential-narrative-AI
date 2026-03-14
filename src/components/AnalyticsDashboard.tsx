@@ -14,6 +14,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { X, Clock, CheckCircle, XCircle, Eye, TrendingUp, Activity, BarChart3, Target, Brain, Gauge, Zap, Shield, Sparkles } from 'lucide-react';
 import { useAnalytics, AggregatedMetrics } from '../hooks/useAnalytics';
+import { API_BASE_URL } from '../api/client';
 
 interface AnalyticsDashboardProps {
   isOpen: boolean;
@@ -72,7 +73,7 @@ export function AnalyticsDashboard({ isOpen, onClose }: AnalyticsDashboardProps)
   const [realtimeMetrics, setRealtimeMetrics] = useState<RealtimeMetrics | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'advanced' | 'calibration'>('overview');
   const [loading, setLoading] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   
   // Calculate metrics fresh from localStorage each render
   const sessions = getSessions();
@@ -111,7 +112,7 @@ export function AnalyticsDashboard({ isOpen, onClose }: AnalyticsDashboardProps)
       mostSelectedGenres: [],
       hourlyDistribution: [],
     };
-  }, [sessions, refreshKey]);
+  }, [sessions]);
 
   // Fetch system metrics from backend
   useEffect(() => {
@@ -124,31 +125,44 @@ export function AnalyticsDashboard({ isOpen, onClose }: AnalyticsDashboardProps)
 
   const fetchSystemMetrics = async () => {
     setLoading(true);
+    setFetchError(null);
     try {
+      let firstError: string | null = null;
       const [metricsRes, calibrationRes, realtimeRes] = await Promise.all([
-        fetch('http://localhost:8888/api/metrics/aggregate'),
-        fetch('http://localhost:8888/api/metrics/calibration'),
-        fetch('http://localhost:8888/api/metrics/realtime'),
+        fetch(`${API_BASE_URL}/api/metrics/aggregate`),
+        fetch(`${API_BASE_URL}/api/metrics/calibration`),
+        fetch(`${API_BASE_URL}/api/metrics/realtime`),
       ]);
       
       if (metricsRes.ok) {
         setSystemMetrics(await metricsRes.json());
+      } else {
+        firstError = firstError || 'Analytics backend returned an error while loading aggregate metrics.';
       }
       if (calibrationRes.ok) {
         setCalibrationStats(await calibrationRes.json());
+      } else {
+        firstError = firstError || 'Calibration metrics are currently unavailable.';
       }
       if (realtimeRes.ok) {
         setRealtimeMetrics(await realtimeRes.json());
+      } else {
+        firstError = firstError || 'Realtime analytics are currently unavailable.';
+      }
+
+      if (firstError) {
+        setFetchError(firstError);
       }
     } catch (error) {
       console.error('Failed to fetch system metrics:', error);
+      setFetchError('Unable to load analytics data. Check backend connectivity and try again.');
     }
     setLoading(false);
   };
 
   const fetchRealtimeMetrics = async () => {
     try {
-      const res = await fetch('http://localhost:8888/api/metrics/realtime');
+      const res = await fetch(`${API_BASE_URL}/api/metrics/realtime`);
       if (res.ok) {
         setRealtimeMetrics(await res.json());
       }
@@ -214,6 +228,12 @@ export function AnalyticsDashboard({ isOpen, onClose }: AnalyticsDashboardProps)
 
         {/* Content */}
         <div className="p-6">
+          {fetchError && (
+            <div className="mb-4 rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+              {fetchError}
+            </div>
+          )}
+
           {loading && (
             <div className="absolute inset-0 bg-midnight-900/50 flex items-center justify-center z-20">
               <div className="animate-spin w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full" />
@@ -265,7 +285,7 @@ function OverviewTab({
 }) {
   const loadDemoData = async () => {
     try {
-      const res = await fetch('http://localhost:8888/api/metrics/seed-demo', { method: 'POST' });
+      const res = await fetch(`${API_BASE_URL}/api/metrics/seed-demo`, { method: 'POST' });
       if (res.ok) {
         window.location.reload();
       }
@@ -441,7 +461,7 @@ function AdvancedMetricsTab({
 }) {
   const loadDemoData = async () => {
     try {
-      const res = await fetch('http://localhost:8888/api/metrics/seed-demo', { method: 'POST' });
+      const res = await fetch(`${API_BASE_URL}/api/metrics/seed-demo`, { method: 'POST' });
       if (res.ok) {
         window.location.reload();
       }

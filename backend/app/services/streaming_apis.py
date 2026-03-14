@@ -37,7 +37,7 @@ class TMDbProvider(StreamingProvider):
     IMAGE_BASE = "https://image.tmdb.org/t/p"
     
     def __init__(self, api_key: str = None):
-        self.api_key = api_key or os.getenv("TMDB_API_KEY", "")
+        self.api_key = api_key or settings.TMDB_API_KEY or os.getenv("TMDB_API_KEY", "")
         self.client = httpx.AsyncClient(timeout=10.0, verify=False)
     
     def _transform_movie(self, movie: dict) -> dict:
@@ -193,7 +193,7 @@ class YouTubeProvider(StreamingProvider):
     BASE_URL = "https://www.googleapis.com/youtube/v3"
     
     def __init__(self, api_key: str = None):
-        self.api_key = api_key or os.getenv("YOUTUBE_API_KEY", "")
+        self.api_key = api_key or settings.YOUTUBE_API_KEY or os.getenv("YOUTUBE_API_KEY", "")
         self.client = httpx.AsyncClient(timeout=10.0, verify=False)
     
     def _transform_video(self, video: dict, details: dict = None) -> dict:
@@ -372,9 +372,9 @@ class ParamountPlusProvider(StreamingProvider):
     BASE_URL = "https://api.paramountplus.com/v1"  # Hypothetical
     
     def __init__(self, api_key: str = None, client_id: str = None, client_secret: str = None):
-        self.api_key = api_key or os.getenv("PARAMOUNT_API_KEY", "")
-        self.client_id = client_id or os.getenv("PARAMOUNT_CLIENT_ID", "")
-        self.client_secret = client_secret or os.getenv("PARAMOUNT_CLIENT_SECRET", "")
+        self.api_key = api_key or settings.PARAMOUNT_API_KEY or os.getenv("PARAMOUNT_API_KEY", "")
+        self.client_id = client_id or settings.PARAMOUNT_CLIENT_ID or os.getenv("PARAMOUNT_CLIENT_ID", "")
+        self.client_secret = client_secret or settings.PARAMOUNT_CLIENT_SECRET or os.getenv("PARAMOUNT_CLIENT_SECRET", "")
         self.client = httpx.AsyncClient(timeout=10.0)
         self._access_token = None
     
@@ -1176,19 +1176,22 @@ class UnifiedContentService:
     
     def get_available_providers(self) -> list[dict]:
         """List available streaming providers"""
+        tmdb_key = settings.TMDB_API_KEY or os.getenv("TMDB_API_KEY")
+        youtube_key = settings.YOUTUBE_API_KEY or os.getenv("YOUTUBE_API_KEY")
+
         return [
             {
                 "id": "tmdb",
                 "name": "TMDb",
                 "description": "Movies & TV Shows Database",
-                "status": "active" if os.getenv("TMDB_API_KEY") else "no_api_key",
+                "status": "active" if tmdb_key else "no_api_key",
                 "content_types": ["movie", "series"]
             },
             {
                 "id": "youtube",
                 "name": "YouTube",
                 "description": "Video Content Platform",
-                "status": "active" if os.getenv("YOUTUBE_API_KEY") else "no_api_key",
+                "status": "active" if youtube_key else "no_api_key",
                 "content_types": ["video"]
             },
             {

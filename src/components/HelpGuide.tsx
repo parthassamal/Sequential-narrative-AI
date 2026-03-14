@@ -16,7 +16,6 @@ import {
   ChevronLeft,
   Volume2,
   Bookmark,
-  Settings,
   Zap,
   Target,
   Clock,
@@ -72,7 +71,7 @@ const guideSteps: GuideStep[] = [
     tips: [
       'Swipe left/right or use arrow keys to navigate',
       'Listen to AI-narrated explanations for each pick',
-      'Tap/click on a card to see more details',
+      'Click the Watch button to select a title and open its streaming destination',
       'The AI adapts based on how long you view each card'
     ],
     color: 'purple'
@@ -122,7 +121,7 @@ const quickTips = [
   { icon: <MousePointer2 className="w-4 h-4" />, text: 'Swipe or use arrow keys to navigate recommendations' },
   { icon: <Clock className="w-4 h-4" />, text: 'Spend more time on cards you like - the AI learns' },
   { icon: <Volume2 className="w-4 h-4" />, text: 'Enable audio for hands-free discovery' },
-  { icon: <Bookmark className="w-4 h-4" />, text: 'Click "Watch Now" when you find something great' },
+  { icon: <Bookmark className="w-4 h-4" />, text: 'Click the "Watch on ..." button when you find something great' },
   { icon: <Lightbulb className="w-4 h-4" />, text: 'Be specific in your queries for better results' },
 ];
 
@@ -324,15 +323,15 @@ export function HelpGuide({ isOpen, onClose }: HelpGuideProps) {
                     </div>
                     <div className="flex items-center gap-2">
                       <kbd className="px-2 py-1 bg-white/10 rounded text-white/70">Space</kbd>
-                      <span className="text-white/50">Play/Pause</span>
+                      <span className="text-white/50">Next card</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <kbd className="px-2 py-1 bg-white/10 rounded text-white/70">Esc</kbd>
                       <span className="text-white/50">Close viewer</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <kbd className="px-2 py-1 bg-white/10 rounded text-white/70">M</kbd>
-                      <span className="text-white/50">Mute/Unmute</span>
+                      <kbd className="px-2 py-1 bg-white/10 rounded text-white/70">P</kbd>
+                      <span className="text-white/50">Play/Pause</span>
                     </div>
                   </div>
                 </div>

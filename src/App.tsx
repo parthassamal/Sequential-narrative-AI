@@ -8,12 +8,10 @@ import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { HelpGuide } from './components/HelpGuide';
 import { useAppStore } from './store/appStore';
 import { useUserPersistence } from './hooks/useUserPersistence';
-import { useAnalytics } from './hooks/useAnalytics';
 
 function App() {
   const { showReel, setShowReel, updateDecisionState } = useAppStore();
   const { saveUser } = useUserPersistence();
-  const { recordAbandonment } = useAnalytics();
   
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -33,20 +31,23 @@ function App() {
     });
   }, []);
 
-  // Track user activity to update decision state
+  // Track user activity to update decision state on the main browsing page.
+  // When reel mode is open, ReelViewer telemetry should own decision-state updates.
   useEffect(() => {
+    if (showReel) return;
+
     let idleTime = 0;
     let scrollCount = 0;
     
     // Track scrolling as engagement signal
     const handleScroll = () => {
-      scrollCount++;
+      scrollCount = Math.min(scrollCount + 1, 40);
       idleTime = 0;
       
-      // More scrolling = higher stress (indecision)
-      const stressFromScrolling = Math.min(scrollCount / 20, 0.4);
+      // More scrolling can indicate indecision, but cap impact to avoid false "overwhelmed" state.
+      const stressFromScrolling = Math.min(scrollCount / 60, 0.25);
       updateDecisionState({
-        stressLevel: 0.2 + stressFromScrolling,
+        stressLevel: 0.15 + stressFromScrolling,
         scrollVelocity: scrollCount,
       });
     };
@@ -60,10 +61,9 @@ function App() {
     const interval = setInterval(() => {
       idleTime++;
       
-      // Long idle time = relaxed (low stress)
-      // High scroll count = overwhelmed (high stress)
-      const stressLevel = Math.max(0.1, Math.min(0.9, 
-        0.2 + (scrollCount / 30) - (idleTime * 0.05)
+      // Long idle time lowers stress; scrolling raises stress gradually.
+      const stressLevel = Math.max(0.1, Math.min(0.8, 
+        0.15 + (scrollCount / 60) - (idleTime * 0.03)
       ));
       
       updateDecisionState({
@@ -73,7 +73,7 @@ function App() {
       });
       
       // Decay scroll count over time
-      scrollCount = Math.max(0, scrollCount - 2);
+      scrollCount = Math.max(0, scrollCount - 1);
     }, 5000);
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -86,11 +86,11 @@ function App() {
       window.removeEventListener('mousemove', handleActivity);
       window.removeEventListener('click', handleActivity);
     };
-  }, [updateDecisionState]);
+  }, [showReel, updateDecisionState]);
 
-  // Track abandonment when reel is closed without selection
+  // Reel close just controls visibility.
+  // Abandonment is tracked inside ReelViewer where we know the close context.
   const handleReelClose = () => {
-    recordAbandonment();
     setShowReel(false);
   };
 
